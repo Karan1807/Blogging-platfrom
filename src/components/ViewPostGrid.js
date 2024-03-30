@@ -14,10 +14,8 @@ import {
 import DeleteIcon from "@mui/icons-material/Delete";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import useApi from "../hooks/useApi";
+import axios from 'axios';
 
-//const axios = require('axios');
-
-//import { deletePost } from './DeletePost'; // Import the deletePost function
 
 const defaultTheme = createTheme({
   typography: {
@@ -37,22 +35,22 @@ const ViewPostGrid = () => {
 
   const navigate = useNavigate();
   const [postContent, setPostContent] = useState([]);
-  // const [deleteConfirmationOpen, setDeleteConfirmationOpen] = useState(false);
-  // const [postIdToDelete, setPostIdToDelete] = useState(null);
+
   const [deleteSuccess, setDeleteSuccess] = useState(false);
   const user = localStorage.getItem("user");
   const [posts, setPosts] = useState([]);
-  // const [deletedPosts, setDeletedPosts] = useState([]);
-  // const [query, setQuery] = useState("");
-  // const [searchResults, setSearchResults] = useState([]);
+  const [query, setQuery] = useState('');
+  const [topic, setTopic] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
   const { fetchPosts } = useApi();
-
+  const [loading, setLoading] = useState(false);
+ 
   useEffect(() => {
     const data = fetchPosts();
     data.then((response) => {
       setPosts(response);
     });
-  }, [navigate, sectionId, deleteSuccess]);
+  }, [ deleteSuccess]);
 
   // Define sections state and setter
   const [sections, setSections] = useState([
@@ -124,10 +122,23 @@ const ViewPostGrid = () => {
       // You can handle network errors or other exceptions here
     }
   }
-
+  const handleSearch = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.post('http://localhost:3001/api/search', { query, topic });
+      setSearchResults(response.data);
+      console.log(setSearchResults);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error occurred while searching:', error);
+      setLoading(false);
+    }
+  };
   return (
     <>
+ 
       <ThemeProvider theme={defaultTheme}>
+        
         <CssBaseline />
         <Container maxWidth="lg">
           <Header
@@ -152,6 +163,26 @@ const ViewPostGrid = () => {
             }
           />
           <main>
+          <div>
+        <input
+          type="text"
+          placeholder="Enter search query"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+        <button onClick={handleSearch}>
+         Search
+        </button>
+      </div>
+      <div>
+        {searchResults.map((result, index) => (
+          <div key={index} className="card">
+            <h2>{result._source.title}</h2>
+            <p>Author: {result._source.author}</p>
+            <p>Description: {result._source.description}</p>
+          </div>
+        ))}
+      </div>
             {postContent.length > 0 ? (
               postContent.map((post, index) => (
                 <Card

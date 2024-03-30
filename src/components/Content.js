@@ -76,17 +76,7 @@ const Content = () => {
     });
   }, [postId, navigate]);
 
-  // useEffect(() => {
-  //   // Find the post with the provided postId
-  //   const foundPost = data.posts.find((post) => post.id === postId);
-  //   if (foundPost) {
-  //     // Set the post if found
-  //     setPost(foundPost);
-  //   } else {
-  //     // Navigate back to home page if postId is not found
-  //     navigate("/");
-  //   }
-  // }, [postId, navigate]);
+ 
 
   const handleReplyChange = (event) => {
     setReplyContent(event.target.value);
