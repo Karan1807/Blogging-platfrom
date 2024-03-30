@@ -1,0 +1,69 @@
+{
+  "name": "my-react-project",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@elastic/elasticsearch": "^8.13.0",
+    "@emotion/react": "^11.11.4",
+    "@emotion/styled": "^11.11.0",
+    "@fontsource/roboto": "^5.0.12",
+    "@mui/icons-material": "^5.15.11",
+    "@mui/material": "^5.15.11",
+    "@mui/styled-engine-sc": "^6.0.0-alpha.10",
+    "@testing-library/jest-dom": "^5.17.0",
+    "@testing-library/react": "^13.4.0",
+    "@testing-library/user-event": "^13.5.0",
+    "axios": "^1.6.8",
+    "body-parser": "^1.20.2",
+    "cors": "^2.8.5",
+    "elasticsearch": "^16.7.3",
+    "express": "^4.19.2",
+    "json-server": "^1.0.0-alpha.23",
+    "markdown-it": "^14.0.0",
+    "markdown-to-jsx": "^7.3.2",
+    "marked": "^12.0.0",
+    "nodemon": "^3.1.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-markdown": "^9.0.1",
+    "react-quill": "^2.0.0",
+    "react-router-dom": "^6.22.2",
+    "react-scripts": "5.0.1",
+    "remark": "^15.0.1",
+    "remark-gfm": "^4.0.0",
+    "remark-html": "^16.0.1",
+    "remark-parse": "^11.0.0",
+    "remark-react": "^9.0.1",
+    "styled-components": "^6.1.8",
+    "unified": "^11.0.4",
+    "web-vitals": "^2.1.4"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
+    "eslint": "^8.57.0"
+  }
+}
