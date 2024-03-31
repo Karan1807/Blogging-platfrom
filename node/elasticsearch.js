@@ -6,6 +6,7 @@ const axios = require("axios");
 const app = express();
 const port = 3001; // Adjust the port as needed
 const { agent } = require("./openAi");
+const {agent2} = require("./chat")
 
 app.use(cors());
 app.use(express.json());
@@ -211,9 +212,19 @@ app.post("/openapi", async (req, res) => {
     res.status(400).json({ error: error.message });
   }
 });
-
-
-
+app.post('/chat', async (req, res) => {
+  try {
+    const { userInput } = req.body;
+    if (!userInput || typeof userInput !== "string") {
+      throw new Error("Invalid user input");
+    }
+    const response = await agent2(userInput);
+    res.json({ response }); // Send the response back to the client
+  } catch (error) {
+    console.error('Error processing chat request:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 
 app.listen(port, () => {
   console.log(`Elasticsearch server is running on port ${port}`);

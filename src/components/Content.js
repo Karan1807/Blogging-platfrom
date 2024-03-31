@@ -3,6 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import Header from "./Header";
 import CssBaseline from "@mui/material/CssBaseline";
 import Container from "@mui/material/Container";
+import Switch from '@mui/material/Switch';
+
 import {
   Card,
   CardContent,
@@ -46,6 +48,8 @@ const Content = () => {
   const [addedReply, setAddedReply] = useState(false);
   const navigate = useNavigate();
   const { fetchPosts } = useApi();
+  const [openAIReplyEnabled, setOpenAIReplyEnabled] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -76,7 +80,30 @@ const Content = () => {
     });
   }, [postId, navigate]);
 
- 
+  const handleOpenAIReplyToggle = () => {
+    setOpenAIReplyEnabled(!openAIReplyEnabled);
+    if (!openAIReplyEnabled) {
+      fetchOpenAIReply();
+    }
+  };
+  const fetchOpenAIReply = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('http://localhost:3001/openapi', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userInput: post.description }),
+      });
+      const data = await response.json();
+      setReplyContent(data.response);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching OpenAI reply:', error);
+      setLoading(false);
+    }
+  };
 
   const handleReplyChange = (event) => {
     setReplyContent(event.target.value);
@@ -175,75 +202,84 @@ const Content = () => {
           onDelete={handleDeletePost} // Pass onDelete prop with the delete function
         />
         <main>
-          {post ? (
-            <>
-              {/* Post content and reply section container */}
-              <div style={{ marginLeft: "24px", width: "calc(100% - 48px)" }}>
-                <Typography variant="h4">{post.title}</Typography>
-                <Typography variant="body2" color="textSecondary" gutterBottom>
-                  {post.author}
-                </Typography>
-                <Typography variant="body2" color="textSecondary" gutterBottom>
-                  {post.createdDate}
-                </Typography>
-                <br />
-                <br />
-                {/* Post content */}
-                <div>
-                  {/* Render HTML content using dangerouslySetInnerHTML */}
-                  <Typography
-                    variant="body1"
-                    dangerouslySetInnerHTML={{ __html: post.description }}
-                    style={{ textAlign: "justify" }}
-                  />
-                </div>
-
-                {/* Reply section */}
-                <Divider sx={{ width: "100%", marginTop: "24px" }} />
-                <div style={{ marginTop: "24px" }}>
-                  <Typography variant="h5">Reply</Typography>
-                  <form onSubmit={handleSubmitReply}>
-                    <TextField
-                      id="reply-content"
-                      label="Your Reply"
-                      multiline
-                      fullWidth
-                      value={replyContent}
-                      onChange={handleReplyChange}
-                      variant="outlined"
-                      margin="normal"
-                    />
-                    <Button type="submit" variant="contained" color="primary">
-                      Submit Reply
-                    </Button>
-                  </form>
-
-                  {/* List of Replies */}
-                  <Typography variant="h5" style={{ marginTop: "24px" }}>
-                    Replies
-                  </Typography>
-                  <div style={{ marginTop: "24px" }}>
-                    {post.replies &&
-                      post.replies.map((reply, index) => (
-                        <Card key={index} style={{ marginBottom: "12px" }}>
-                          <CardContent>
-                            <Typography variant="body1">
-                              <strong>{reply.user}</strong>
-                              <br />
-                              {reply.content}
-                            </Typography>
-                          </CardContent>
-                        </Card>
-                      ))}
-                  </div>
-                </div>
-              </div>
-            </>
-          ) : (
-            <Typography variant="body1">
-              Post with ID {postId} is invalid.
+        <>
+      {post ? (
+        <>
+          {/* Post content and reply section container */}
+          <div style={{ marginLeft: '24px', width: 'calc(100% - 48px)' }}>
+            <Typography variant="h4">{post.title}</Typography>
+            <Typography variant="body2" color="textSecondary" gutterBottom>
+              {post.author}
             </Typography>
-          )}
+            <Typography variant="body2" color="textSecondary" gutterBottom>
+              {post.createdDate}
+            </Typography>
+            <br />
+            {/* Post content */}
+            <div>
+              {/* Render HTML content using dangerouslySetInnerHTML */}
+              <Typography
+                variant="body1"
+                dangerouslySetInnerHTML={{ __html: post.description }}
+                style={{ textAlign: 'justify' }}
+              />
+            </div>
+
+            {/* Reply section */}
+            <Divider sx={{ width: '100%', marginTop: '24px' }} />
+            <div style={{ marginTop: '24px' }}>
+              <Typography variant="h5">Reply</Typography>
+              <form onSubmit={handleSubmitReply}>
+                <TextField
+                  id="reply-content"
+                  label="Your Reply"
+                  multiline
+                  fullWidth
+                  value={replyContent}
+                  onChange={handleReplyChange}
+                  variant="outlined"
+                  margin="normal"
+                  disabled={loading}
+                />
+                <Button type="submit" variant="contained" color="primary" disabled={loading}>
+                  Submit Reply
+                </Button>
+              </form>
+              
+              {/* Loading indicator */}
+              {openAIReplyEnabled && loading && <Typography>Loading...</Typography>}
+
+              {/* Toggle for OpenAI Reply */}
+              <div style={{ marginTop: '12px' }}>
+                <Typography variant="body2">OpenAI Reply</Typography>
+                <Switch checked={openAIReplyEnabled} onChange={handleOpenAIReplyToggle} />
+              </div>
+
+              {/* List of Replies */}
+              <Typography variant="h5" style={{ marginTop: '24px' }}>
+                Replies
+              </Typography>
+              <div style={{ marginTop: '24px' }}>
+                {post.replies &&
+                  post.replies.map((reply, index) => (
+                    <Card key={index} style={{ marginBottom: '12px' }}>
+                      <CardContent>
+                        <Typography variant="body1">
+                          <strong>{reply.user}</strong>
+                          <br />
+                          {reply.content}
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  ))}
+              </div>
+            </div>
+          </div>
+        </>
+      ) : (
+        <Typography variant="body1">Post with ID {postId} is invalid.</Typography>
+      )}
+    </>
         </main>
       </Container>
       {/* Delete confirmation dialog */}

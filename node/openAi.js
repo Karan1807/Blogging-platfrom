@@ -1,8 +1,11 @@
 const OpenAI = require("openai");
 const readline = require("readline");
+require('dotenv').config();
+
+
 
 const openai = new OpenAI({
-  apiKey: "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",
+  apiKey:process.env.OPEN_API_KEY,
   dangerouslyAllowBrowser: true,
 });
 

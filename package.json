@@ -68,5 +68,9 @@
   "devDependencies": {
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "eslint": "^8.57.0"
-  }
+  },
+  "description": "Welcome to the College/Department Blogging Platform! This platform serves as a centralized hub for sharing insights, experiences, and resources within our college or department community.",
+  "main": "index.js",
+  "author": "",
+  "license": "ISC"
 }
