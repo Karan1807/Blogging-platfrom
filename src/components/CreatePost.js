@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState ,useContext} from "react";
 import {
   Button,
   FormControl,
@@ -10,6 +10,9 @@ import {
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import useApi from "../hooks/useApi";
+
+
+
 
 const sections = [
   { title: "Academic Resources", id: "academic-resources" },
@@ -24,11 +27,13 @@ const sections = [
   { title: "Travel", id: "travel" },
   { title: "Alumni", id: "alumni" },
 ];
+const CreatePost = (props) => {
 
-const CreatePost = () => {
+  const checker = props.subscriptionChecker
+
+
   const [posts, setPosts] = useState([]);
   const navigate = useNavigate();
-  const { fetchPosts } = useApi();
   const [formData, setFormData] = useState({
     title: "",
     topic: "",
@@ -36,7 +41,7 @@ const CreatePost = () => {
     shortdescription: "",
     description: "",
   });
-
+  console.log(checker.isSubscribed);
   const handleInputChange = (event) => {
     const { name, value } = event.target;
     setFormData((prevState) => ({
@@ -63,7 +68,17 @@ const CreatePost = () => {
         window.alert("Post created successfully");
         // Redirect to the main page (blog page)
 
-        navigate(`/view-post-grid/${formData.topic}`); // Replace "/blog" with the actual URL of your blog page
+       
+        if(!checker.isSubscribed){
+          await fetch("http://localhost:3001/api/send-emails", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ topic: formData.topic }),
+          });
+        }
+        navigate(`/view-post-grid/${formData.topic}`);
       } else {
         console.error("Failed to add post");
         // Handle error scenarios

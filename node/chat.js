@@ -11,18 +11,13 @@ const openai = new OpenAI({
 
 
 async function getLocation() {
-  try {
-    const response = await fetch('https://ipapi.co/json/');
-    if (response.ok) {
-      const locationData = await response.json();
-      return locationData;
-    } else {
-      throw new Error('Network response was not ok.');
-    }
-  } catch (error) {
-    console.error('There has been a problem with your fetch operation:', error);
-    return null;
-  }
+   await fetch('https://ipapi.co/json/')
+    .then(response => {
+      console.log(response);
+      })
+      .catch(error => {
+        console.error('There has been a problem with your fetch operation:', error);
+      });
 }
 
 async function getCurrentWeather(latitude, longitude) {
@@ -128,7 +123,7 @@ async function chat() {
         console.log("Goodbye!");
         process.exit(0);
       }
-      const response = await agent2(userInput);
+      const response = await agent2(userInput="in chicago");
       console.log('Bot:', response);
       console.log("You: ");
     });
@@ -137,4 +132,4 @@ async function chat() {
   // Start the chat
   chat();// Call the main function to start the conversation
 
-  module.exports = { agent2 };
+  module.exports = {agent2};

@@ -1,8 +1,13 @@
-import React, { useState, useEffect } from "react";
+
+import React, { useState, useEffect,useContext} from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import Header from "./Header";
 import CssBaseline from "@mui/material/CssBaseline";
 import Container from "@mui/material/Container";
+import Switch from '@mui/material/Switch';
+import { Grid, TextField } from '@mui/material';
+
+
 import {
   Button,
   Card,
@@ -14,45 +19,73 @@ import {
 import DeleteIcon from "@mui/icons-material/Delete";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import useApi from "../hooks/useApi";
-import axios from 'axios';
+
+
 
 
 const defaultTheme = createTheme({
   typography: {
-    // Customize typography colors here
     body1: {
       color: "#000", // Black color for body text
     },
     body2: {
       color: "#000", // Black color for secondary text
     },
-    // Add more overrides as needed
   },
 });
 
-const ViewPostGrid = () => {
-  const { sectionId } = useParams();
 
+const ViewPostGrid = (props) => {
+  
+  const { sectionId } = useParams();
   const navigate = useNavigate();
   const [postContent, setPostContent] = useState([]);
-
+  const [user, setUser] = useState(null);
   const [deleteSuccess, setDeleteSuccess] = useState(false);
-  const user = localStorage.getItem("user");
   const [posts, setPosts] = useState([]);
   const [query, setQuery] = useState('');
   const [topic, setTopic] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const { fetchPosts } = useApi();
   const [loading, setLoading] = useState(false);
- 
-  useEffect(() => {
-    const data = fetchPosts();
-    data.then((response) => {
-      setPosts(response);
-    });
-  }, [ deleteSuccess]);
+  console.log("props of view post grid",props.subscriptionChecker)
+  const [isSubscribed, setIsSubscribed] = useState(props.subscriptionChecker.isSubscribed);
 
-  // Define sections state and setter
+ 
+
+  const handleSubscriptionToggle = () => {
+    setIsSubscribed((prevState) => !prevState);
+    console.log(isSubscribed)
+    if(isSubscribed===true){
+      props.subscriptionCheckerHandler(true,sectionId)
+    }
+    if(isSubscribed===false){
+      props.subscriptionCheckerHandler(false,sectionId)
+    }
+    if (!isSubscribed) {
+      handleSubscription();
+    }
+    // You can also add logic to handle unsubscription here if needed
+  };
+
+  useEffect(() => {
+    const storedUsers = localStorage.getItem('users');
+    if (storedUsers) {
+      const users = JSON.parse(storedUsers);
+      const loggedInUser = users.find(u => u.username === localStorage.getItem('user'));
+      setUser(loggedInUser);
+    }
+  }, []);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const data = await fetchPosts();
+      setPosts(data);
+    };
+
+    fetchData();
+  }, [deleteSuccess]);
+
   const [sections, setSections] = useState([
     { title: "Academic Resources", id: "academic-resources" },
     { title: "Career Services", id: "career-services" },
@@ -69,11 +102,10 @@ const ViewPostGrid = () => {
 
   useEffect(() => {
     const filteredPosts = posts.filter(
-      (posts) => posts._source.topic === sectionId
+      (post) => post._source.topic === sectionId
     );
     setPostContent(filteredPosts);
 
-    // Update isActive property based on the sectionId
     const updatedSections = sections.map((section) => ({
       ...section,
       isActive: section.id === sectionId,
@@ -91,15 +123,35 @@ const ViewPostGrid = () => {
 
   const handleCardClick = (postId) => {
     const post = posts.find((post) => post._id === postId);
-    console.log("post id:", postId);
     if (post) {
       navigate(`/content/${post._id}`);
+   
     } else {
       console.error(`Post with ID ${postId} not found`);
     }
   };
+  const cardStyle = {
+    border: '1px solid #ccc',
+    borderRadius: '8px',
+    padding: '16px',
+    marginBottom: '16px',
+    backgroundColor: '#f9f9f9',
+  };
+  
+  const headerStyle = {
+    marginBottom: '8px',
+  };
+  
+  const authorStyle = {
+    fontSize: '14px',
+    color: '#555',
+  };
+  
+  const descriptionStyle = {
+    fontSize: '16px',
+  };
+  
 
-  // Function to handle deletion of a post
   async function handleDelete(postId) {
     try {
       await fetch("http://localhost:3001/api/deletepost", {
@@ -119,26 +171,60 @@ const ViewPostGrid = () => {
       });
     } catch (error) {
       console.error("Error deleting post:", error);
-      // You can handle network errors or other exceptions here
     }
   }
+
   const handleSearch = async () => {
     try {
       setLoading(true);
-      const response = await axios.post('http://localhost:3001/api/search', { query, topic });
-      setSearchResults(response.data);
-      console.log(setSearchResults);
+      const response = await fetch('http://localhost:3001/api/search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ query, topic }),
+      });
+      const data = await response.json();
+      setSearchResults(data);
       setLoading(false);
     } catch (error) {
       console.error('Error occurred while searching:', error);
       setLoading(false);
     }
   };
+
+  const handleSubscription = async () => {
+    try {
+      const email = window.prompt("Please enter your email to subscribe to this topic:");
+      if (email) {
+        await fetch('http://localhost:3001/api/subscribe', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            topic: sectionId,
+            email: email,
+            userId: user.id
+          }),
+        });
+        alert('Subscription successful!');
+      }
+    } catch (error) {
+      console.error('Error subscribing:', error);
+      alert('Error subscribing. Please try again later.');
+    }
+  };
+
+    const toggleSubscription = () => {
+      setIsSubscribed(prevState => !prevState);
+    };
+  
+
   return (
     <>
  
       <ThemeProvider theme={defaultTheme}>
-        
         <CssBaseline />
         <Container maxWidth="lg">
           <Header
@@ -156,36 +242,67 @@ const ViewPostGrid = () => {
                 <Button color="inherit" onClick={navigateHome}>
                   Home
                 </Button>
+                
+           
                 <Button color="inherit" onClick={navigateToCreatePost}>
                   Create
                 </Button>
+                
               </>
             }
+            
           />
-          <main>
-          <div>
-        <input
+              <Grid
+      container
+      spacing={2}
+      direction="column"
+      alignItems="center"
+      justifyContent="flex-start"
+      style={{ minHeight: '0vh' }}
+    >
+      <Grid item style={{ marginTop: '20px' }}>
+        <TextField
           type="text"
-          placeholder="Enter search query"
+          label="Enter search query"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
-        <button onClick={handleSearch}>
-         Search
-        </button>
+      </Grid>
+      <Grid item>
+        <Button variant="contained" onClick={handleSearch}>
+          Search
+        </Button>
+      </Grid>
+    </Grid>
+
+          
+          <main>
+          {/* Toggle button for subscription */}
+          <Switch
+                  key={sectionId}
+                  checked={props.subscriptionChecker.sectionId===sectionId?isSubscribed:false}
+                  onChange={handleSubscriptionToggle}
+                  color="primary"
+                  name="subscriptionToggle"
+                  inputProps={{ 'aria-label': 'toggle subscription' }}
+                />
+                {props.subscriptionChecker.sectionId===sectionId?(isSubscribed ? 'Unsubscribe' : 'Subscribe'):'Subscribe'}
+           
+                <div>
+  {searchResults.map((result, index) => (
+    <div key={index} style={cardStyle}>
+      <div style={headerStyle}>
+        <h2>{result._source.title}</h2>
+        <p style={authorStyle}>Author: {result._source.author}</p>
       </div>
-      <div>
-        {searchResults.map((result, index) => (
-          <div key={index} className="card">
-            <h2>{result._source.title}</h2>
-            <p>Author: {result._source.author}</p>
-            <p>Description: {result._source.description}</p>
-          </div>
-        ))}
-      </div>
+      <p style={descriptionStyle}>Description: {result._source.description}</p>
+    </div>
+  ))}
+</div>
             {postContent.length > 0 ? (
               postContent.map((post, index) => (
                 <Card
+                  key={index}
                   style={{
                     margin: "20px",
                     position: "relative",
@@ -195,7 +312,6 @@ const ViewPostGrid = () => {
                   }}
                 >
                   <Link
-                    key={post._id}
                     to={`/content/${post._id}`}
                     style={{ textDecoration: "none", color: "inherit" }}
                     onClick={() => handleCardClick(post._id)}
@@ -246,7 +362,7 @@ const ViewPostGrid = () => {
                   <CardActions
                     style={{ position: "absolute", top: "5px", right: "5px" }}
                   >
-                    {user === "Moderator" && (
+                    {user && user.role === "Moderator" && (
                       <IconButton
                         aria-label="delete"
                         onClick={() => handleDelete(post._id)}
@@ -265,8 +381,10 @@ const ViewPostGrid = () => {
           </main>
         </Container>
       </ThemeProvider>
+     
     </>
   );
 };
+
 
 export default ViewPostGrid;

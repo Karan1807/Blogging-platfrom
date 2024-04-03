@@ -91,6 +91,7 @@ function Header(props) {
             <Button onClick={onDelete} variant="outlined" size="small">Delete</Button>
           )}
           {login ? (
+            
             <Button component={Link} to="/create-post/:sectionId" variant="outlined" size="small">
               Create
             </Button>

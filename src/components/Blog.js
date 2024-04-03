@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import CssBaseline from '@mui/material/CssBaseline';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
@@ -9,6 +9,7 @@ import Footer from './Footer';
 import photo from './mainpage.png';
 import ChatIcon from '@mui/icons-material/Chat';
 import CloseIcon from '@mui/icons-material/Close';
+
 
 const sections = [
   { title: 'Academic Resources', id: 'academic-resources' },
@@ -34,6 +35,7 @@ export default function Blog() {
   const [userInput, setUserInput] = useState('');
 const [messages, setMessages] = useState([]);
 const [showChat, setShowChat] = useState(false);
+
 const toggleChatWindow = () => {
     setShowChat(!showChat);
   };

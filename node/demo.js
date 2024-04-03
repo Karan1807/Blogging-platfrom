@@ -117,21 +117,8 @@ async function agent(userInput) {
   return "The maximum number of iterations has been met without a suitable answer. Please try again with a more specific input.";
 }
 
-async function chat() {
-    console.log("Welcome! Type 'exit' to end the conversation.");
-    process.stdin.setEncoding('utf8');
-  
-    process.stdin.on('data', async (input) => {
-      const userInput = input.trim();
-      if (userInput.toLowerCase() === 'exit') {
-        console.log("Goodbye!");
-        process.exit(0);
-      }
-      const response = await agent(userInput);
-      console.log('Bot:', response);
-      console.log("You: ");
-    });
-  }
-  
+
+      const response = await agent("give me weather details according to loaction");
+      
   // Start the chat
   chat();

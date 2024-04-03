@@ -7,20 +7,32 @@ const app = express();
 const port = 3001; // Adjust the port as needed
 const { agent } = require("./openAi");
 const {agent2} = require("./chat")
-
 app.use(cors());
 app.use(express.json());
 app.use(bodyParser.json());
+const nodemailer = require('nodemailer');
 
 const esClient = new Client({ node: "http://localhost:9200" });
-
+const transporter = nodemailer.createTransport({
+  service: 'gmail', // e.g., 'gmail', 'hotmail', etc.
+  auth: {
+    user: 'karan.savaliya24@gmail.com',
+    pass: 'ltyj nzwy olim fqvv',
+  },
+});
+transporter.verify(function (error, success) {
+  if (error) {
+    console.log(error);
+  } else {
+    console.log("SMTP server is ready to take our messages");
+  }
+});
 app.post("/api/createposts", async (req, res) => {
   try {
     const { title, topic, author, shortdescription, description } = req.body;
-
     // Elasticsearch index operation
     const { body } = await esClient.index({
-      index: "cp", // Change this to your desired index name
+      index: "createp", // Change this to your desired index name
       body: {
         title,
         topic,
@@ -54,7 +66,7 @@ app.post("/api/createposts", async (req, res) => {
 app.get("/api/createposts", async (req, res) => {
   try {
     const body = await esClient.search({
-      index: "cp",
+      index: "createp",
       body: {
         query: {
           match_all: {},
@@ -81,7 +93,7 @@ app.delete("/api/deletepost", async (req, res) => {
 
     // Delete the post from Elasticsearch index
     const response = await esClient.delete({
-      index: "cp",
+      index: "createp",
       id: postId,
     });
 
@@ -144,7 +156,7 @@ app.post("/api/search", async (req, res) => {
     }
 
     const searchResult = await esClient.search({
-      index: "cp",
+      index: "createp",
       body: body,
     });
 
@@ -167,7 +179,7 @@ app.post("/api/reply", async (req, res) => {
     }
 
     const response = await esClient.update({
-      index: "cp",
+      index: "createp",
       id: postId,
       body: {
         script: {
@@ -218,13 +230,150 @@ app.post('/chat', async (req, res) => {
     if (!userInput || typeof userInput !== "string") {
       throw new Error("Invalid user input");
     }
-    const response = await agent2(userInput);
+    const response = await agent2(userInput+"my location is illinois chicago and weather is about 8 degrees");
+    console.log("Res",response);
     res.json({ response }); // Send the response back to the client
   } catch (error) {
     console.error('Error processing chat request:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+app.post('/subscribe', async (req, res) => {
+  const { topic, email, userId } = req.body;
+
+  try {
+    // Save subscription details in Elasticsearch
+    const response = await esClient.index({
+      index: 'subscribe',
+      body: {
+        topic,
+        email,
+        userId,
+      },
+    });
+console.log(response);
+    res.json({ success: true, data:response });
+
+  } catch (error) {
+    console.error('Error saving subscription:', error);
+    res.status(500).json({ success: false, error: 'Error saving subscription' });
+  }
+})
+
+app.post("/api/subscribe", async (req, res) => {
+  try {
+    const { topic, email, userId } = req.body;
+    // Elasticsearch index operation
+    const { body } = await esClient.index({
+      index: "ss", // Change this to your desired index name
+      body: {
+        topic,
+        email,
+        userId,
+      },
+    });
+    console.log(" topic:", topic);
+    console.log(" email:", email);
+    console.log(" userID:", userId);
+
+    res.status(200).json({
+      success: true,
+      message: "subscribed",
+      data: body,
+    });
+  } catch (error) {
+    console.error("Error creating post:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error creating post",
+      error: error.message,
+    });
+  }
+});
+app.post('/api/send-emails', async (req, res) => {
+  try {
+    const { topic } = req.body;
+
+    // Ensure topic is provided in the request body
+    if (!topic) {
+      return res.status(400).json({ success: false, error: 'Topic is required' });
+    }
+
+    // Elasticsearch query to search for subscribed users
+    const body = {
+      query: {
+        bool: {
+          must: [],
+        },
+      },
+    };
+
+    // Add filter for the topic
+    body.query.bool.must.push({
+      match: {
+        topic: topic,
+      },
+    });
+
+    // Execute Elasticsearch search query
+    const searchResult = await esClient.search({
+      index: "ss",
+      body: body,
+    });
+
+    // Check if searchResponse contains hits
+    if (searchResult && searchResult.hits && searchResult.hits.hits.length > 0) {
+      // Extract subscribed users' email addresses
+      const subscribers = searchResult.hits.hits.map(hit => hit._source.email);
+
+      // Send emails to subscribed users
+      for (const email of subscribers) {
+        try {
+          // Send email using Nodemailer
+          await transporter.sendMail({
+            from: 'karan.savaliya24@gmail.com',
+            to: email,
+            subject: `New post under topic ${topic}`,
+            text: 'There is a new post available under ${topic}',
+          });
+          console.log('Email sent to:', email);
+        } catch (error) {
+          console.error('Error sending email to', email, ':', error);
+        }
+      }
+
+      return res.json({ success: true, body});
+
+    } else {
+      console.error('No subscribers found for the specified topic:', topic);
+      return res.json({ success: false, message: 'No subscribers found for the specified topic' });
+    }
+  } catch (error) {
+    console.error('Error sending emails:', error);
+    return res.status(500).json({ success: false, error: 'Error sending emails' });
+  }
+});
+
+app.get("/api/subscribe", async (req, res) => {
+  try {
+    const body = await esClient.search({
+      index: "ss",
+      body: {
+        query: {
+          match_all: {},
+        },
+      },
+    });
+
+    res.json(body.hits.hits);
+  } catch (error) {
+    console.error("Error occurred while fetching createposts:", error);
+    res
+      .status(500)
+      .json({ error: "An error occurred while fetching createposts" });
+  }
+});
+
 
 app.listen(port, () => {
   console.log(`Elasticsearch server is running on port ${port}`);
